@@ -1,0 +1,10 @@
+#ID:elements
+#
+# Cereals
+8480017439482:2
+# Cinnamon
+8480017012944:4
+# Cocacola
+5449000009067:2
+# Maria Cookies
+8410014312211:3
