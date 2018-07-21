@@ -1,0 +1,12 @@
+bin/
+external/cjson/
+external/curl/
+external/openldap/
+external/openssl/
+external/sqlite/
+external/yaml/
+external/zlib/
+libs/
+obj/
+*.log
+*.db
