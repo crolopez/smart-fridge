@@ -40,6 +40,8 @@ int start_daemon(connections_conf *config) {
 
     listen(internal_sock_desc , 1);
 
+    sf_info(LISTEN_PORT, config->internal_port);
+
     while (1) {
         if (client_sock = accept(internal_sock_desc, (struct sockaddr *)&client, (socklen_t*)&sock_size), client_sock < 0) {
             sf_error(INCOMING_CON_ERROR);

@@ -38,5 +38,6 @@
 #define TEST_MODE_END             "(034) Finishing test mode."
 #define DECODER_END               "(035) Finishing product decoding."
 #define STORER_END                "(036) Finishing product storing."
+#define LISTEN_PORT               "(037) Listening on port %d."
 
 #endif
