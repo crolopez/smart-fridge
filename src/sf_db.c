@@ -9,6 +9,9 @@
 #include "config.h"
 #include "sf_db.h"
 #include "log.h"
+#include <sys/sendfile.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 static const char *internal_header;
 static int int_header_size;
@@ -50,9 +53,10 @@ int start_daemon(connections_conf *config) {
                 msg[read_size] = '\0';
                 sf_debug1(MSG_RECEIVED, msg);
                 // Decode the message
-                if (msg_decoder(msg)) {
+                if (msg_decoder(client_sock, msg)) {
                     sf_error(DECODER_ERROR);
                 }
+                close(client_sock);
             }
 
             if (read_size < 0) {
@@ -65,7 +69,7 @@ int start_daemon(connections_conf *config) {
     }
 }
 
-int msg_decoder(char *msg) {
+int msg_decoder(int client_sock, char *msg) {
     int retval = 1;
     product *pr_dec = NULL;
 
@@ -78,6 +82,13 @@ int msg_decoder(char *msg) {
             sf_error(PRODUCT_INSERT_ERROR);
             goto end;
         }
+    } else if (!strncmp(msg, DB_SYNC_HEADER, strlen(DB_SYNC_HEADER))) {
+        if (database_send(client_sock)){
+            sf_error(DB_COPY_SENT_ERROR);
+            goto end;
+        } else {
+            sf_debug1(DB_COPY_SENT);
+        }
     } else {
         sf_error(UNKNOWN_MSG_FORMAT);
         goto end;
@@ -88,6 +99,41 @@ end:
         free_product(pr_dec);
     }
     return retval;
+}
+
+int database_send(int sock) {
+    static char buffer[MAX_MSG_CHUNK + 1];
+    int db_fd;
+    struct stat db_stat;
+    long int offset;
+    int remaing;
+    int sent_bytes;
+
+    if (db_fd = open(DB_LOCATION, O_RDONLY), !db_fd) {
+        return 1;
+    }
+
+    if (fstat(db_fd, &db_stat) < 0) {
+        return 1;
+    }
+
+    sprintf(buffer, "%ld!", db_stat.st_size);
+    sf_debug2(DB_SIZE_MSG, buffer);
+
+    // Send database size
+    if(send(sock, buffer, strlen(buffer), 0) < 0) {
+        return 1;
+    }
+
+    offset = 0;
+    remaing = db_stat.st_size;
+
+    while (((sent_bytes = sendfile(sock, db_fd, &offset, 3)) > 0) && (remaing > 0)) {
+        remaing -= sent_bytes;
+        sf_debug2(DB_CHUNK_REMAINING, sent_bytes, remaing);
+    }
+
+    return 0;
 }
 
 int db_insert(product *pr_dec) {

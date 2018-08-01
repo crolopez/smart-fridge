@@ -5,7 +5,7 @@
 #include "cJSON.h"
 
 #define MAX_ID_LEN 50
-#define MAX_PRODUCT_PRINT_SIZE 6144
+#define MAX_PRODUCT_PRINT_SIZE 1024
 #define OF_API "https://world.openfoodfacts.org/api/v0/product/%s.json"
 #define NODE_NAME "reader"
 #define LOG_FILE "./sf.log"

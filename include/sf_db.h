@@ -2,6 +2,8 @@
 #define SF_DB
 
 #define MAX_QUERY_SIZE 65536 // 64 KB
+#define DB_SYNC_HEADER "!#2+"
+#define MAX_MSG_CHUNK 6144
 
 const char *node_name = "database server";
 const char *log_file = "./sf.log";
@@ -10,9 +12,10 @@ extern const char *database_schema;
 int start_daemon();
 void sf_dhelp();
 int create_db();
-int msg_decoder(char *msg);
+int msg_decoder(int client_sock, char *msg);
 int db_insert(product *pr_dec);
 int insert_tags(sqlite3 *db, char **array, char *product_name, int type);
+int database_send(int sock);
 
 typedef enum QUERY_TYPE {
     INSERT_PRODUCT_DATA,

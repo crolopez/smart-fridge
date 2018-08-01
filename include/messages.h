@@ -39,5 +39,9 @@
 #define DECODER_END               "(035) Finishing product decoding."
 #define STORER_END                "(036) Finishing product storing."
 #define LISTEN_PORT               "(037) Listening on port %d."
+#define DB_COPY_SENT              "(038) A copy of the database has been sent."
+#define DB_COPY_SENT_ERROR        "(039) A database copy could not be sent."
+#define DB_SIZE_MSG               "(040) Database size: %s."
+#define DB_CHUNK_REMAINING        "(041) %d bytes have been sent to the client. %d to go."
 
 #endif
