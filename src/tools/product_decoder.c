@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "cJSON.h"
 #include "product_decoder.h"
 
@@ -29,11 +30,13 @@ static char *JSON_STATUS_VERBOSE = "status_verbose";
 static char *JSON_TAGS = "tags";
 static char *JSON_NUMBER = "number";
 static char *JSON_PRODUCT_ES = "es";
+static char *JSON_PRODUCT_CODE = "code";
+static char *JSON_PRODUCT_TIMESTAMP = "timestamp";
 static char *JSON_PRODUCT_CATEGORIES = "categories"; // Substitute for product_name
 static char *JSON_GENERIC_NAME = "generic_name"; // Substitute for product_name
 static char *PRODUCT_NOT_FOUND = "product not found";
 
-int sf_pr_raw_decoder(char *str_json, cJSON **pr_dec, int number) {
+int sf_pr_raw_decoder(char *str_json, cJSON **pr_dec, int number, char *code) {
     cJSON *obj, *json_product, *json_images, *json_it, *json_it_aux;
     cJSON *decoded = NULL;
     cJSON *decoded_images = NULL;
@@ -41,6 +44,9 @@ int sf_pr_raw_decoder(char *str_json, cJSON **pr_dec, int number) {
     cJSON *tags_additives = NULL;
     cJSON *tags_allergens = NULL;
     cJSON *tags_ingredients = NULL;
+    char str_timestamp[26];
+    struct tm *timestamp;
+    time_t t_now;
     int retval = NO_ERROR;
     int i;
     *pr_dec = NULL;
@@ -235,6 +241,13 @@ int sf_pr_raw_decoder(char *str_json, cJSON **pr_dec, int number) {
         decoded_images = NULL;
     }
 
+    t_now = time(NULL);
+    timestamp = localtime(&t_now);
+    strftime(str_timestamp, 26, "%Y-%m-%d %H:%M:%S", timestamp);
+    cJSON_AddStringToObject(decoded, "timestamp", str_timestamp);
+
+    cJSON_AddStringToObject(decoded, "code", code);
+
     *pr_dec = decoded;
     decoded = NULL;
 end:
@@ -333,6 +346,26 @@ int sf_pr_decoder(char *str_json, product **pr_dec) {
         }
     }
 
+    // Get the product code
+    if (json_it = cJSON_GetObjectItem(json_product, JSON_PRODUCT_CODE), !json_it) {
+        retval = UNEX_FIELDS;
+        goto end;
+    } else {
+        if (*json_it->valuestring != '\0') {
+            decoded->code = strdup(json_it->valuestring);
+        }
+    }
+
+    // Get the timestamp
+    if (json_it = cJSON_GetObjectItem(json_product, JSON_PRODUCT_TIMESTAMP), !json_it) {
+        retval = UNEX_FIELDS;
+        goto end;
+    } else {
+        if (*json_it->valuestring != '\0') {
+            decoded->timestamp = strdup(json_it->valuestring);
+        }
+    }
+
     // Get the product labels
     if (json_it = cJSON_GetObjectItem(json_product, JSON_PRODUCT_LABELS), !json_it) {
         retval = UNEX_FIELDS;
@@ -421,6 +454,8 @@ end:
 void free_product(product *pr_dec) {
     int i;
     free(pr_dec->name);
+    free(pr_dec->code);
+    free(pr_dec->timestamp);
     free(pr_dec->quantity);
     free(pr_dec->ingredients);
     free(pr_dec->brands);

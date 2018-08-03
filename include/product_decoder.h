@@ -25,6 +25,8 @@ typedef struct product_images { // product -> select_images
 typedef struct product {
     product_images images;
     char *name; // product->product_name
+    char *code;
+    char *timestamp;
     char *quantity; // product -> nutrition_data_per
     char *ingredients; // product -> ingredients_text (can be order by another field)
     char *brands; // product -> brands
@@ -37,7 +39,7 @@ typedef struct product {
 } product;
 
 int sf_pr_decoder(char *str_json, product **pr_dec);
-int sf_pr_raw_decoder(char *str_json, cJSON **pr_dec, int number);
+int sf_pr_raw_decoder(char *str_json, cJSON **pr_dec, int number, char *code);
 product_node *create_product_node(char *id, int number);
 void free_product(product *pr_dec);
 void free_product_node(product_node *node);

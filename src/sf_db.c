@@ -56,7 +56,6 @@ int start_daemon(connections_conf *config) {
                 if (msg_decoder(client_sock, msg)) {
                     sf_error(DECODER_ERROR);
                 }
-                close(client_sock);
             }
 
             if (read_size < 0) {
@@ -159,13 +158,15 @@ int db_insert(product *pr_dec) {
     if (result = sqlite3_prepare_v2(db, DB_QUERIES[INSERT_PRODUCT_DATA], -1, &stmt, NULL), result != SQLITE_OK) {
         goto end;
     }
-    sqlite3_bind_text(stmt, 1, pr_dec->name, -1, NULL);
-    sqlite3_bind_text(stmt, 2, pr_dec->quantity, -1, NULL);
-    sqlite3_bind_text(stmt, 3, pr_dec->ingredients, -1, NULL);
-    sqlite3_bind_text(stmt, 4, pr_dec->brands, -1, NULL);
-    sqlite3_bind_text(stmt, 5, pr_dec->expiration_date, -1, NULL);
-    sqlite3_bind_text(stmt, 6, pr_dec->labels, -1, NULL);
-    sqlite3_bind_int(stmt, 7, pr_dec->number);
+    sqlite3_bind_text(stmt, 1, pr_dec->code, -1, NULL);
+    sqlite3_bind_text(stmt, 2, pr_dec->name, -1, NULL);
+    sqlite3_bind_text(stmt, 3, pr_dec->quantity, -1, NULL);
+    sqlite3_bind_text(stmt, 4, pr_dec->ingredients, -1, NULL);
+    sqlite3_bind_text(stmt, 5, pr_dec->brands, -1, NULL);
+    sqlite3_bind_text(stmt, 6, pr_dec->expiration_date, -1, NULL);
+    sqlite3_bind_text(stmt, 7, pr_dec->labels, -1, NULL);
+    sqlite3_bind_int(stmt, 8, pr_dec->number);
+    sqlite3_bind_text(stmt, 9, pr_dec->timestamp, -1, NULL);
     if (result = sqlite3_step(stmt), result != SQLITE_DONE) {
         if (result == SQLITE_CONSTRAINT) {
             sqlite3_finalize(stmt);

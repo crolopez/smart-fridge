@@ -61,7 +61,7 @@ void *sf_decoder(void *conf) {
             goto next_it;
         }
         result = 0;
-        if (!(str_json = strchr(buffer, '{')) || (result = sf_pr_raw_decoder(str_json, &decoded_pr, node->number)) !=  NO_ERROR) {
+        if (!(str_json = strchr(buffer, '{')) || (result = sf_pr_raw_decoder(str_json, &decoded_pr, node->number, node->code)) !=  NO_ERROR) {
             switch (result) {
                 case INV_FORMAT:
                     sf_error(INVALID_FILE_FORMAT);
