@@ -57,14 +57,11 @@ int start_daemon(connections_conf *config) {
                     sf_error(DECODER_ERROR);
                 }
             }
-
             if (read_size < 0) {
                 sf_error(RECEIVE_ERROR);
             }
-
             close(client_sock);
         }
-
     }
 }
 
@@ -127,7 +124,7 @@ int database_send(int sock) {
     offset = 0;
     remaing = db_stat.st_size;
 
-    while (((sent_bytes = sendfile(sock, db_fd, &offset, 3)) > 0) && (remaing > 0)) {
+    while (((sent_bytes = sendfile(sock, db_fd, &offset, MAX_MSG_CHUNK)) > 0) && (remaing > 0)) {
         remaing -= sent_bytes;
         sf_debug2(DB_CHUNK_REMAINING, sent_bytes, remaing);
     }
@@ -187,16 +184,20 @@ int db_insert(product *pr_dec) {
     stmt = NULL;
 
     // Insert the tags
-    if (insert_tags(db, pr_dec->ingredients_tags, pr_dec->name, INSERT_INGREDIENT_TAG)) {
+    if (insert_tags(db, pr_dec->ingredients_tags, pr_dec->code, INSERT_INGREDIENT_TAG)) {
         sf_error(TAGS_INSERT_ERROR, "Ingredients");
         goto end;
     }
-    if (insert_tags(db, pr_dec->allergens_tags, pr_dec->name, INSERT_ALLERGEN_TAG)) {
+    if (insert_tags(db, pr_dec->allergens_tags, pr_dec->code, INSERT_ALLERGEN_TAG)) {
         sf_error(TAGS_INSERT_ERROR, "Allergens");
         goto end;
     }
-    if (insert_tags(db, pr_dec->additives_tags, pr_dec->name, INSERT_ADDITIVE_TAG)) {
+    if (insert_tags(db, pr_dec->additives_tags, pr_dec->code, INSERT_ADDITIVE_TAG)) {
         sf_error(TAGS_INSERT_ERROR, "Additives");
+        goto end;
+    }
+    if (insert_images(db, &pr_dec->images, pr_dec->code)) {
+        sf_error(PRODUCT_IMAGES_ERROR);
         goto end;
     }
 
@@ -212,7 +213,7 @@ end:
     return retval;
 }
 
-int insert_tags(sqlite3 *db, char **array, char *product_name, int type) {
+int insert_tags(sqlite3 *db, char **array, char *product_code, int type) {
     int retval = 1;
     int i;
     char *name_tag;
@@ -226,7 +227,7 @@ int insert_tags(sqlite3 *db, char **array, char *product_name, int type) {
             if (result = sqlite3_prepare_v2(db, DB_QUERIES[type], -1, &stmt, NULL), result != SQLITE_OK) {
                 goto end;
             }
-            sqlite3_bind_text(stmt, 1, product_name, -1, NULL);
+            sqlite3_bind_text(stmt, 1, product_code, -1, NULL);
             if (name_tag = strchr(array[i], ':'), name_tag) {
                 *(name_tag++) = '\0';
                 language_tag = array[i];
@@ -244,6 +245,37 @@ int insert_tags(sqlite3 *db, char **array, char *product_name, int type) {
             stmt = NULL;
         }
     }
+    retval = 0;
+end:
+    if(stmt) {
+        sqlite3_finalize(stmt);
+    }
+    return retval;
+}
+
+int insert_images(sqlite3 *db, product_images *images, char *product_code) {
+    int retval = 1;
+    int i;
+    char *name_tag;
+    char *language_tag;
+    int result;
+    const char *tail;
+    sqlite3_stmt *stmt = NULL;
+
+    if (result = sqlite3_prepare_v2(db, DB_QUERIES[INSERT_IMAGES], -1, &stmt, NULL), result != SQLITE_OK) {
+        goto end;
+    }
+    sqlite3_bind_text(stmt, 1, product_code, -1, NULL);
+    sqlite3_bind_text(stmt, 2, images->front, -1, NULL);
+    sqlite3_bind_text(stmt, 3, images->nutrition, -1, NULL);
+    sqlite3_bind_text(stmt, 4, images->ingredients, -1, NULL);
+
+    if (result = sqlite3_step(stmt), result != SQLITE_DONE && result != SQLITE_CONSTRAINT) {
+        goto end;
+    }
+
+    sqlite3_finalize(stmt);
+    stmt = NULL;
     retval = 0;
 end:
     if(stmt) {

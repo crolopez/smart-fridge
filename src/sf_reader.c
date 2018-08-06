@@ -127,7 +127,7 @@ void *sf_storer(void *conf) {
         sleep(config->pr_sleep);
         if (!data && !(data = sf_queue_get(prq))) {
             if (execution_ends) {
-                sf_info(DECODER_END);
+                sf_info(STORER_END);
                 break;
             }
             sf_debug2(EMPTY_QUEUE, "products");

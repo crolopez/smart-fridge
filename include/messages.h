@@ -43,5 +43,6 @@
 #define DB_COPY_SENT_ERROR        "(039) A database copy could not be sent."
 #define DB_SIZE_MSG               "(040) Database size: %s."
 #define DB_CHUNK_REMAINING        "(041) %d bytes have been sent to the client. %d to go."
+#define PRODUCT_IMAGES_ERROR      "(042) The product images could not be inserted."
 
 #endif
