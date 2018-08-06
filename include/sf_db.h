@@ -4,6 +4,7 @@
 #define MAX_QUERY_SIZE 65536 // 64 KB
 #define DB_SYNC_HEADER "!#2+"
 #define MAX_MSG_CHUNK 6144
+#define CONTINUE_IT 32
 
 const char *node_name = "database server";
 const char *log_file = "./sf.log";

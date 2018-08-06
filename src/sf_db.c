@@ -30,6 +30,7 @@ int start_daemon(connections_conf *config) {
     char msg[MAX_LOGSIZE];
     size_t sock_size = sizeof(struct sockaddr_in);
     int read_size;
+    int result;
 
     internal_sock_desc = socket(AF_INET , SOCK_STREAM , 0);
     server.sin_family = AF_INET;
@@ -53,7 +54,9 @@ int start_daemon(connections_conf *config) {
                 msg[read_size] = '\0';
                 sf_debug1(MSG_RECEIVED, msg);
                 // Decode the message
-                if (msg_decoder(client_sock, msg)) {
+                if (result = msg_decoder(client_sock, msg), result == CONTINUE_IT) {
+                    break;
+                } else if (result) {
                     sf_error(DECODER_ERROR);
                 }
             }
@@ -83,7 +86,9 @@ int msg_decoder(int client_sock, char *msg) {
             sf_error(DB_COPY_SENT_ERROR);
             goto end;
         } else {
+            retval = CONTINUE_IT;
             sf_debug1(DB_COPY_SENT);
+            goto end;
         }
     } else {
         sf_error(UNKNOWN_MSG_FORMAT);
