@@ -72,9 +72,8 @@ else
 	LDAP_FLAG="--disable-ldap"
 endif
 ifeq (${ENABLE_CAM},YES)
-	OPENCV=$(LIBS)/libopencv.a
 	ZBAR=$(LIBS)/libzbar.a
-	EXT_L+= opencv zbar
+	EXT_L+= zbar
 	EXT_VAR=-DCAMERA_ENABLED
 	CAMERA_CFLAG=-I$(EXT)/zbar/include
 	ZBAR_LIB=-lzbar -lX11 -lXv -ljpeg#-lGL -lGLU
@@ -114,7 +113,7 @@ endif
 default: install $(EXT) $(BINARIES)
 	$(P_SUCCESS) "Everything has been compiled correctly."
 
-$(EXT): $(EXT_D) $(LCURL) $(LYAML) $(LSQLITE) $(OPENCV) $(ZBAR)
+$(EXT): $(EXT_D) $(LCURL) $(LYAML) $(LSQLITE) $(ZBAR)
 	$(P_END)
 
 $(EXT)/%:
@@ -156,13 +155,6 @@ $(OBJ)/db_schema.o: $(SCHEMA_LOCATION)
 	echo 'const char *database_schema = "'"`cat $< | tr -d \"\n\"`"'";' | gcc -xc -c -o $@ -
 
 ########### Libraries
-$(OPENCV):
-	@mkdir -p $(EXT)/opencv/bin
-	@cd $(EXT)/opencv/bin && cmake -D CMAKE_BUILD_TYPE=RELEASE ..
-	@cd $(EXT)/opencv/bin && make $(P_DEPS)
-	@touch $@
-	# Need copy the library
-
 $(ZBAR):
 	@cd $(EXT)/zbar && ./configure --enable-static CFLAGS="" # --without-python --without-qt --without-gtk --without-jpeg --disable-video  --without-x
 	@cd $(EXT)/zbar && make $(P_DEPS)
@@ -219,7 +211,7 @@ clean: clean_obj clean_binaries
 
 clean_external:
 	$(P_TOOL) "Cleaning external files..."
-	@rm -rf $(EXT_D)
+	@rm -rf $(EXT_D) $(EXT)/zbar
 
 clean_libs:
 	$(P_TOOL) "Cleaning libraries..."
