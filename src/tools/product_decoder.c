@@ -31,6 +31,7 @@ static char *JSON_TAGS = "tags";
 static char *JSON_NUMBER = "number";
 static char *JSON_PRODUCT_ES = "es";
 static char *JSON_PRODUCT_CODE = "code";
+static char *JSON_REMOVE = "remove";
 static char *JSON_PRODUCT_TIMESTAMP = "timestamp";
 static char *JSON_PRODUCT_CATEGORIES = "categories"; // Substitute for product_name
 static char *JSON_GENERIC_NAME = "generic_name"; // Substitute for product_name
@@ -290,6 +291,24 @@ int sf_pr_decoder(char *str_json, product **pr_dec) {
     decoded = calloc(1, sizeof(product));
     memset(decoded, 0, sizeof(product));
 
+    // Get the product code
+    if (json_it = cJSON_GetObjectItem(json_product, JSON_PRODUCT_CODE), !json_it) {
+        retval = UNEX_FIELDS;
+        goto end;
+    } else {
+        if (*json_it->valuestring != '\0') {
+            decoded->code = strdup(json_it->valuestring);
+        }
+    }
+
+    // Check if it is a remove message
+    if (json_it = cJSON_GetObjectItem(json_product, JSON_REMOVE), json_it) {
+        retval = DELETION_REQ;
+        *pr_dec = decoded;
+        decoded = NULL;
+        goto end;
+    }
+
     // Get the product name
     if (json_it = cJSON_GetObjectItem(json_product, JSON_NAME), !json_it) {
         retval = UNEX_FIELDS;
@@ -343,16 +362,6 @@ int sf_pr_decoder(char *str_json, product **pr_dec) {
     } else {
         if (*json_it->valuestring != '\0') {
             decoded->expiration_date = strdup(json_it->valuestring);
-        }
-    }
-
-    // Get the product code
-    if (json_it = cJSON_GetObjectItem(json_product, JSON_PRODUCT_CODE), !json_it) {
-        retval = UNEX_FIELDS;
-        goto end;
-    } else {
-        if (*json_it->valuestring != '\0') {
-            decoded->code = strdup(json_it->valuestring);
         }
     }
 
@@ -494,10 +503,11 @@ void free_product_node(product_node *node) {
     }
 }
 
-product_node *create_product_node(char *id, int number) {
+product_node *create_product_node(char *id, int number, int mode) {
     product_node *node;
     node = calloc(1, sizeof(product_node));
     node->code = id;
     node->number = number;
+    node->mode = mode;
     return node;
 }

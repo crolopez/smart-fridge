@@ -9,10 +9,14 @@
 #define OF_API "https://world.openfoodfacts.org/api/v0/product/%s.json"
 #define NODE_NAME "reader"
 #define LOG_FILE "./sf.log"
+#define DB_MODE_ADD 1
+#define DB_MODE_REMOVE 2
+#define REMOVE_MSG "{\"code\":\"%s\",\"remove\":\"yes\"}"
 
 void sf_rhelp();
 product_node *sf_scan_code();
 int sf_send_product(char *data);
+static void key_handler(int signum);
 #ifdef CAMERA_ENABLED
 void z_handler (zbar_image_t *im, const void *data);
 #endif

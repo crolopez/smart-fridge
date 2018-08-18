@@ -7,6 +7,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <signal.h>
 #ifdef CAMERA_ENABLED
 #include <zbar.h>
 #endif
@@ -27,6 +28,7 @@ static int int_header_size;
 static char *int_address;
 static int int_port;
 static int execution_ends = 0;
+static char db_mode = DB_MODE_ADD;
 
 product_node *sf_scan_code() {
     // Check MAX_ID_LEN here
@@ -44,7 +46,7 @@ void z_handler (zbar_image_t *im, const void *data) {
 		zbar_symbol_type_t typ = zbar_symbol_get_type(symbol);
 		code = zbar_symbol_get_data(symbol);
 		sf_debug2(ZBAR_DEBUG_MSG, zbar_get_symbol_name(typ), code);
-        node = create_product_node(strdup(code), 1);
+        node = create_product_node(strdup(code), 1, db_mode);
         if (sf_queue_add(idq, node)) {
             sf_warn(FULL_QUEUE, node->code);
             free_product_node(node);
@@ -52,6 +54,18 @@ void z_handler (zbar_image_t *im, const void *data) {
     }
 }
 #endif
+
+static void key_handler(int signum) {
+    if (signum == SIGTSTP) {
+        if (db_mode == DB_MODE_ADD) {
+            db_mode = DB_MODE_REMOVE;
+        } else {
+            db_mode = DB_MODE_ADD;
+        }
+        sf_info(KEY_PRESSED, (db_mode == DB_MODE_ADD) ? "ADD" : "REMOVE");
+    }
+    return;
+}
 
 void *sf_decoder(void *conf) {
     product_node *node;
@@ -77,6 +91,17 @@ void *sf_decoder(void *conf) {
             sleep(config->pr_sleep);
             continue;
         }
+
+        if (node->mode == DB_MODE_REMOVE) {
+            snprintf(url, 100, REMOVE_MSG, node->code);
+            if (sf_queue_add(prq, strdup(url))) {
+                sf_warn(FULL_QUEUE, str_product);
+            } else {
+                sf_debug1(DELETION_REQUEST, node->code);
+            }
+            goto next_it;
+        }
+
         snprintf(url, 100, OF_API, node->code);
 
         if (sf_download_file(url, &size, &buffer)) {
@@ -174,20 +199,17 @@ void sf_bar_handler(reader_conf *config) {
 
     if (!test_mode_file) {
         sf_info(INIT_BAR_HAND);
-        /*while (1) {
-            sleep(2);
-            if (node = sf_scan_code(), node) {
-                if (sf_queue_add(idq, node)) {
-                    sf_warn(FULL_QUEUE, node->code);
-                }
-                free_product_node(node);
-            }
-        }*/
+#ifdef CAMERA_ENABLED
+        // Setting the key handler
+        if (signal(SIGTSTP, key_handler) == SIG_ERR) {
+            sf_exit_error(KEY_HANDLER_ERROR);
+        }
+
         zbar_processor_t *proc = zbar_processor_create(1);
         zbar_processor_set_data_handler(proc, z_handler, NULL);
 
         //zbar_processor_set_config(proc, 0, ZBAR_CFG_ENABLE, 1);
-        if (result = zbar_processor_init(proc, "/dev/video0", 1), result < 0) {
+        if (result = zbar_processor_init(proc, config->device, 1), result < 0) {
             sf_exit_error(DEVICE_OPEN_ERROR, config->device);
         };
 
@@ -196,6 +218,7 @@ void sf_bar_handler(reader_conf *config) {
         zbar_processor_user_wait(proc, -1);
 
         zbar_processor_destroy(proc);
+#endif
     } else { // (TBD)
         FILE *fp;
         char *found;
@@ -240,7 +263,7 @@ void sf_bar_handler(reader_conf *config) {
                 number = 1;
             }
             sf_debug1(CODE_READ, pr_id, number);
-            node = create_product_node(strdup(pr_id), number);
+            node = create_product_node(strdup(pr_id), number, db_mode);
             if (sf_queue_add(idq, node)) {
                 sf_warn(FULL_QUEUE, node->code);
                 free_product_node(node);

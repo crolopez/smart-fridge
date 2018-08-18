@@ -71,15 +71,23 @@ int start_daemon(connections_conf *config) {
 int msg_decoder(int client_sock, char *msg) {
     int retval = 1;
     product *pr_dec = NULL;
+    int result;
 
     if (!strncmp(msg, internal_header, int_header_size)) {
         msg += int_header_size;
-        if (sf_pr_decoder(msg, &pr_dec), !pr_dec) {
+        if (result = sf_pr_decoder(msg, &pr_dec), !pr_dec) {
             goto end;
         }
-        if (db_insert(pr_dec)) {
-            sf_error(PRODUCT_INSERT_ERROR);
-            goto end;
+        if (result == DELETION_REQ) {
+            if (db_remove(pr_dec)) {
+                sf_error(PRODUCT_INSERT_ERROR);
+                goto end;
+            }
+        } else {
+            if (db_insert(pr_dec)) {
+                sf_error(PRODUCT_REMOVE_ERROR);
+                goto end;
+            }
         }
     } else if (!strncmp(msg, DB_SYNC_HEADER, strlen(DB_SYNC_HEADER))) {
         if (database_send(client_sock)){
@@ -203,6 +211,57 @@ int db_insert(product *pr_dec) {
     }
     if (insert_images(db, &pr_dec->images, pr_dec->code)) {
         sf_error(PRODUCT_IMAGES_ERROR);
+        goto end;
+    }
+
+    retval = 0;
+end:
+    if (stmt) {
+        sqlite3_finalize(stmt);
+    }
+    sqlite3_prepare_v2(db, DB_QUERIES[END_TRANSACTION], -1, &stmt, NULL);
+    if (db) {
+        sqlite3_close_v2(db);
+    }
+    return retval;
+}
+
+int db_remove(product *pr_dec) {
+    sqlite3 *db = NULL;
+    const char *tail;
+    sqlite3_stmt *stmt = NULL;
+    int retval = 1;
+    int result;
+    int i;
+    char *name_tag;
+    char *language_tag;
+
+    if (sqlite3_open_v2(DB_LOCATION, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL)) {
+        goto end;
+    }
+
+    if (result = sqlite3_prepare_v2(db, DB_QUERIES[BEGIN_TRANSACTION], -1, &stmt, NULL), result != SQLITE_OK) {
+        goto end;
+    }
+    sqlite3_finalize(stmt);
+
+    // Remove the product data
+    if (result = sqlite3_prepare_v2(db, DB_QUERIES[REMOVE_PRODUCT], -1, &stmt, NULL), result != SQLITE_OK) {
+        goto end;
+    }
+    sqlite3_bind_text(stmt, 1, pr_dec->code, -1, NULL);
+
+    if (result = sqlite3_step(stmt), result != SQLITE_DONE) {
+        goto end;
+    }
+    sqlite3_finalize(stmt);
+
+    // Remove the row if elements = 0
+    if (result = sqlite3_prepare_v2(db, DB_QUERIES[CLEAN_EMPTY], -1, &stmt, NULL), result != SQLITE_OK) {
+        goto end;
+    }
+
+    if (result = sqlite3_step(stmt), result != SQLITE_DONE) {
         goto end;
     }
 

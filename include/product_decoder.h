@@ -3,6 +3,8 @@
 
 #include "cJSON.h"
 
+#define DELETION_REQ 2
+
 // Product decoder outputs
 typedef enum pr_dec_error {
     NO_ERROR,
@@ -14,6 +16,7 @@ typedef enum pr_dec_error {
 typedef struct product_node {
     char *code;
     int number;
+    int mode;
 } product_node;
 
 typedef struct product_images { // product -> select_images
@@ -40,7 +43,7 @@ typedef struct product {
 
 int sf_pr_decoder(char *str_json, product **pr_dec);
 int sf_pr_raw_decoder(char *str_json, cJSON **pr_dec, int number, char *code);
-product_node *create_product_node(char *id, int number);
+product_node *create_product_node(char *id, int number, int mode);
 void free_product(product *pr_dec);
 void free_product_node(product_node *node);
 
