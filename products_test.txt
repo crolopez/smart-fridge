@@ -1,0 +1,20 @@
+#ID:quantity
+#
+# Cereales
+8480017439482:2
+# Bote de canela
+8480017012944:4
+# Cocacola
+5449000009067:2
+# Galletas María
+8410014312211:3
+# Ketchup
+87157246:5
+# Horchata
+8425991411901
+# Ensalada de Quinoa
+7613036451666
+# Pan de molde
+8412600009345:7
+# Chocapic
+8410100026824:2

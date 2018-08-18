@@ -17,6 +17,7 @@ typedef struct reader_conf {
     int pr_size;
     int test_sleep;
     char *test_repeat;
+    char *device;
 } reader_conf;
 
 typedef struct connections_conf {

@@ -8,6 +8,7 @@
 # PARALLEL_DEPS=<THREADS> -> COMPILES DEPENDENCIES IN PARALLEL
 # ENABLE_LDAP=YES -> ENABLE OPEN LDAP INTEGRATION (TBD)
 # DB -> LAUNCHES THE DATABASE INTERFACE
+# ENABLE_CAM=YES -> COMPILE WITH CAMERA SUPPORT
 #
 ####################################
 
@@ -62,6 +63,7 @@ LSQLITE=$(LIBS)/libsqlite3.a
 LCRYPTO=$(LIBS)/libcrypto.a
 LLBER=$(LIBS)/liblber.a
 LZ=$(LIBS)/libz.a
+LYAML=$(LIBS)/libyaml.a
 ifeq (${ENABLE_LDAP},YES)
 	LDAP=$(LIBS)/libldap.a
 	LDAP_FLAG="--enable-ldap"
@@ -69,20 +71,27 @@ ifeq (${ENABLE_LDAP},YES)
 else
 	LDAP_FLAG="--disable-ldap"
 endif
-LYAML=$(LIBS)/libyaml.a
+ifeq (${ENABLE_CAM},YES)
+	OPENCV=$(LIBS)/libopencv.a
+	ZBAR=$(LIBS)/libzbar.a
+	EXT_L+= opencv zbar
+	EXT_VAR=-DCAMERA_ENABLED
+	CAMERA_CFLAG=-I$(EXT)/zbar/include
+	ZBAR_LIB=-lzbar -lX11 -lXv -ljpeg#-lGL -lGLU
+endif
 EXT_D := $(EXT_L:%=$(EXT)/%)
 
 # Flags
-SF_CFLAGS=-I$(INC) -I$(EXT)/yaml/include -I$(EXT)/curl/include/curl -I$(EXT)/cjson -I$(EXT)/sqlite
+SF_CFLAGS= -I$(INC) -I$(EXT)/yaml/include -I$(EXT)/curl/include/curl -I$(EXT)/cjson -I$(EXT)/sqlite $(CAMERA_CFLAG)
 SF_LDFLAGS=-L$(LIBS) -lyaml -lpthread -ldl
-CURL_LDFLAGS=-lcurl -lz $(LDAP_LIBS) -lssl -lcrypto
+CURL_LDFLAGS=-lcurl -lz $(LDAP_LIBS) -lssl -lcrypto $(ZBAR_LIB)
 
 # Auxiliary variables
 PROJECT_PATH := $(shell pwd)
 OPENSSL_PATH=$(PROJECT_PATH)/$(EXT)/openssl
 SCHEMA_LOCATION=./database.sql
 DB_LOCATION="./sf.db"
-EXT_VAR= -DSCHEMA_LOCATION=\"$(SCHEMA_LOCATION)\" -DDB_LOCATION=\"$(DB_LOCATION)\"
+EXT_VAR+= -DSCHEMA_LOCATION=\"$(SCHEMA_LOCATION)\" -DDB_LOCATION=\"$(DB_LOCATION)\"
 
 BINARIES=$(BIN)/$(SAPP) $(BIN)/$(SDB) $(BIN)/$(SREADER) #$(EXT_L)
 
@@ -105,7 +114,7 @@ endif
 default: install $(EXT) $(BINARIES)
 	$(P_SUCCESS) "Everything has been compiled correctly."
 
-$(EXT): $(EXT_D) $(LCURL) $(LYAML) $(LSQLITE)
+$(EXT): $(EXT_D) $(LCURL) $(LYAML) $(LSQLITE) $(OPENCV) $(ZBAR)
 	$(P_END)
 
 $(EXT)/%:
@@ -147,17 +156,29 @@ $(OBJ)/db_schema.o: $(SCHEMA_LOCATION)
 	echo 'const char *database_schema = "'"`cat $< | tr -d \"\n\"`"'";' | gcc -xc -c -o $@ -
 
 ########### Libraries
+$(OPENCV):
+	@mkdir -p $(EXT)/opencv/bin
+	@cd $(EXT)/opencv/bin && cmake -D CMAKE_BUILD_TYPE=RELEASE ..
+	@cd $(EXT)/opencv/bin && make $(P_DEPS)
+	@touch $@
+	# Need copy the library
+
+$(ZBAR):
+	@cd $(EXT)/zbar && ./configure --enable-static CFLAGS="" # --without-python --without-qt --without-gtk --without-jpeg --disable-video  --without-x
+	@cd $(EXT)/zbar && make $(P_DEPS)
+	@cp $(EXT)/zbar/zbar/.libs/libzbar.a $@
+
 $(LDAP):
 	@cd $(EXT)/openldap && ./configure # Protocols still need to be reduced
 	@cd $(EXT)/openldap && make depend
 	@cd $(EXT)/openldap && make $(P_DEPS)
-	@cp $(EXT)/openldap/libraries/libldap/.libs/libldap.a $(LDAP)
+	@cp $(EXT)/openldap/libraries/libldap/.libs/libldap.a $@
 	@cp $(EXT)/openldap/libraries/liblber/.libs/liblber.a $(LLBER)
 
 $(LZ):
 	@cd $(EXT)/zlib && ./configure # Protocols still need to be reduced
 	@cd $(EXT)/zlib && make $(P_DEPS)
-	@cp $(EXT)/zlib/libz.a $(LZ)
+	@cp $(EXT)/zlib/libz.a $@
 
 $(LOPENSSL): $(LDAP) $(LZ)
 	@cd $(EXT)/openssl && ./config # Protocols still need to be reduced

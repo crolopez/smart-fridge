@@ -23,7 +23,8 @@ typedef enum reader_section {
     read_sect,
     id_sect,
     pr_sect,
-    test_sect
+    test_sect,
+    coder_sect
 } reader_section;
 
 typedef enum connections_section {
@@ -46,9 +47,11 @@ static const char * YAML_CONNECTIONS = "connections";
 static const char * YAML_ID_QUEUE = "id_queue";
 static const char * YAML_PROD_QUEUE = "product_queue";
 static const char * YAML_TEST_MODE = "test_mode";
+static const char * YAML_CODE_READER = "code_reader";
 static const char * YAML_SLEEP = "sleep";
 static const char * YAML_SIZE = "size";
 static const char * YAML_INFINITE = "infinite";
+static const char * YAML_DEVICE = "device";
 // Connections Blocks
 static const char * YAML_PORTS = "ports";
 static const char * YAML_ADDRESSES = "addresses";
@@ -193,6 +196,9 @@ int sf_load_reader_config(reader_conf **config, yaml_parser_t *parser) {
                     } else if (!strcmp(scalar, YAML_INFINITE)) {
                         conv.data = (void **)&(*config)->test_repeat;
                         conv.type = 0;
+                    } else if (!strcmp(scalar, YAML_DEVICE)) {
+                        conv.data = (void **)&(*config)->device;
+                        conv.type = 0;
                     } else if (!strcmp(scalar, YAML_ID_QUEUE)) {
                         sect = id_sect;
                         state = expect_block_mapping;
@@ -201,6 +207,9 @@ int sf_load_reader_config(reader_conf **config, yaml_parser_t *parser) {
                         state = expect_block_mapping;
                     } else if (!strcmp(scalar, YAML_TEST_MODE)) {
                         sect = test_sect;
+                        state = expect_block_mapping;
+                    } else if (!strcmp(scalar, YAML_CODE_READER)) {
+                        sect = coder_sect;
                         state = expect_block_mapping;
                     } else {
                         sf_error(INV_CONFIG_TAG_BLOCK, scalar, YAML_READER);

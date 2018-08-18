@@ -44,5 +44,7 @@
 #define DB_SIZE_MSG               "(040) Database size: %s."
 #define DB_CHUNK_REMAINING        "(041) %d bytes have been sent to the client. %d to go."
 #define PRODUCT_IMAGES_ERROR      "(042) The product images could not be inserted."
+#define ZBAR_DEBUG_MSG            "(043) Decoded [%s] symbol -> [%s]"
+#define DEVICE_OPEN_ERROR         "(044) Could not open the device '%s'."
 
 #endif

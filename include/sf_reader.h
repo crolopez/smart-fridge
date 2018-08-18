@@ -13,6 +13,9 @@
 void sf_rhelp();
 product_node *sf_scan_code();
 int sf_send_product(char *data);
+#ifdef CAMERA_ENABLED
+void z_handler (zbar_image_t *im, const void *data);
+#endif
 
 void *sf_decoder(void *conf);
 void *sf_storer(void *conf);

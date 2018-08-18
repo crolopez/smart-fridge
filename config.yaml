@@ -15,9 +15,11 @@ reader:
     test_mode:
         sleep : 2
         infinite : no
+    code_reader:
+        device : "/dev/video0"
 connections:
     ports:
-        internal : 2178
+        internal : 2187
     headers:
         internal : "!#+"
     addresses:
