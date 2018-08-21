@@ -50,7 +50,6 @@ OBJ_TE=$(OBJ)/tests
 OBJ_S=$(OBJ)/servers
 
 # Programs
-SAPP=sf_app
 SDB=sf_db
 SREADER=sf_reader
 
@@ -92,7 +91,7 @@ SCHEMA_LOCATION=./database.sql
 DB_LOCATION="./sf.db"
 EXT_VAR+= -DSCHEMA_LOCATION=\"$(SCHEMA_LOCATION)\" -DDB_LOCATION=\"$(DB_LOCATION)\"
 
-BINARIES=$(BIN)/$(SAPP) $(BIN)/$(SDB) $(BIN)/$(SREADER) #$(EXT_L)
+BINARIES=$(BIN)/$(SDB) $(BIN)/$(SREADER) #$(EXT_L)
 
 ifeq (${TEST},YES)
 	BINARIES+=$(BIN_T)/log_test
@@ -122,10 +121,6 @@ $(EXT)/%:
 	cd $(EXT) && tar -zxf $(patsubst $(EXT)/%,%,$@.tar.gz)
 
 ########### Bin
-$(BIN)/$(SAPP): $(OBJ_S)/$(SAPP).o
-	$(P_COMP) "############ Compiling the application server ############"
-	$(CC) -o $@ $^ $(SF_LDFLAGS)
-
 $(BIN)/$(SDB): $(OBJ_S)/$(SDB).o $(OBJ_TO)/log.o $(OBJ_TO)/config.o $(OBJ_TO)/log.o $(OBJ)/db_schema.o $(OBJ_TO)/product_decoder.o $(LCJSON)
 	$(P_COMP) "############ Compiling the database server ############"
 	$(CC) -o $@ $^ -lsqlite3 -lm $(SF_LDFLAGS)
@@ -223,7 +218,7 @@ clean_obj:
 
 clean_binaries:
 	$(P_TOOL) "Cleaning binaries..."
-	@rm -f $(BIN)/$(SAPP) $(BIN)/$(SREADER) $(BIN)/$(SDB) $(BIN_T)/*
+	@rm -f $(BIN)/$(SREADER) $(BIN)/$(SDB) $(BIN_T)/*
 
 zip:
 	$(P_TOOL) "Compressing..."
