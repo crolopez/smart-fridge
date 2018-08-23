@@ -49,6 +49,6 @@
 #define KEY_PRESSED               "(045) A key has been pressed. Database mode: '%s'."
 #define KEY_HANDLER_ERROR         "(046) The key manager could not be activated."
 #define DELETION_REQUEST          "(047) The deletion request for '%s' has been pasted."
-#define PRODUCT_REMOVE_ERROR      "(031) The product could not be removed from the database."
+#define PRODUCT_REMOVE_ERROR      "(048) The product could not be removed from the database."
 
 #endif
