@@ -25,7 +25,8 @@ typedef enum reader_section {
     pr_sect,
     test_sect,
     coder_sect,
-    rlogs_sect
+    rlogs_sect,
+    socket_mode
 } reader_section;
 
 typedef enum database_section {
@@ -54,6 +55,8 @@ static const char * YAML_SLEEP = "sleep";
 static const char * YAML_SIZE = "size";
 static const char * YAML_INFINITE = "infinite";
 static const char * YAML_DEVICE = "device";
+static const char * YAML_PORT = "port";
+static const char * YAML_SOCKET_MODE = "socket_mode";
 // Database Blocks
 static const char * YAML_PORTS = "ports";
 static const char * YAML_ADDRESSES = "addresses";
@@ -187,6 +190,9 @@ int sf_load_reader_config(reader_conf **config, yaml_parser_t *parser) {
                     } else if (!strcmp(scalar, YAML_DEVICE)) {
                         conv.data = (void **)&(*config)->device;
                         conv.type = 0;
+                    } else if (!strcmp(scalar, YAML_PORT)) {
+                        conv.data = (void **)&(*config)->socket_mode_port;
+                        conv.type = 1;
                     } else if (!strcmp(scalar, YAML_LOCATION)) {
                         conv.data = (void **)&(*config)->log_location;
                         conv.type = 0;
@@ -204,6 +210,9 @@ int sf_load_reader_config(reader_conf **config, yaml_parser_t *parser) {
                         state = expect_block_mapping;
                     } else if (!strcmp(scalar, YAML_LOGS)) {
                         sect = rlogs_sect;
+                        state = expect_block_mapping;
+                    } else if (!strcmp(scalar, YAML_SOCKET_MODE)) {
+                        sect = socket_mode;
                         state = expect_block_mapping;
                     } else {
                         sf_error(INV_CONFIG_TAG_BLOCK, scalar, YAML_READER);
@@ -342,6 +351,7 @@ void free_reader_conf(reader_conf *conf) {
     if (conf) {
         free(conf->test_repeat);
         free(conf->log_location);
+        free(conf->socket_mode_port);
         free(conf);
     }
 }

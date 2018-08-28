@@ -50,5 +50,7 @@
 #define KEY_HANDLER_ERROR         "(046) The key manager could not be activated."
 #define DELETION_REQUEST          "(047) The deletion request for '%s' has been pasted."
 #define PRODUCT_REMOVE_ERROR      "(048) The product could not be removed from the database."
+#define SOCKET_FORMAT_ERROR       "(049) The product code could not be extracted in socket mode from '%s'."
+#define SOCKET_SUCC_EXTRACT       "(050) Product code extracted from socket connection: '%s'x%i."
 
 #endif

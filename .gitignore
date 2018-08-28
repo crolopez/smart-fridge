@@ -6,6 +6,7 @@ external/openssl/
 external/sqlite/
 external/yaml/
 external/zlib/
+external/zbar/
 libs/
 obj/
 *.log

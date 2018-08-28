@@ -17,6 +17,7 @@ typedef struct reader_conf {
     char *test_repeat;
     char *device;
     char *log_location;
+    int socket_mode_port;
 } reader_conf;
 
 typedef struct db_conf {

@@ -27,6 +27,7 @@ static char *internal_header;
 static int int_header_size;
 static char *int_address;
 static int int_port;
+static int socket_mode_port = 0;
 static int execution_ends = 0;
 static char db_mode = DB_MODE_ADD;
 
@@ -195,9 +196,62 @@ void sf_bar_handler(reader_conf *config) {
     char *pr_id = NULL;
     int number;
     int repeat;
+    int client_sock;
+    int internal_sock_desc;
+    struct sockaddr_in server, client;
+    char msg[MAX_LOGSIZE];
+    size_t sock_size = sizeof(struct sockaddr_in);
+    int read_size;
     int result;
+    char *msg_it;
+    char *found;
 
-    if (!test_mode_file) {
+    if (socket_mode_port) {
+        internal_sock_desc = socket(AF_INET , SOCK_STREAM , 0);
+        server.sin_family = AF_INET;
+        server.sin_addr.s_addr = INADDR_ANY;
+        server.sin_port = htons(socket_mode_port);
+
+        if(bind(internal_sock_desc,(struct sockaddr *)&server , sizeof(server)) < 0) {
+            sf_exit_error(BIND_ERROR, socket_mode_port, -2);
+        }
+        listen(internal_sock_desc , 1);
+
+        sf_info(LISTEN_PORT, socket_mode_port);
+
+        while (1) {
+            if (client_sock = accept(internal_sock_desc, (struct sockaddr *)&client, (socklen_t*)&sock_size), client_sock < 0) {
+                sf_error(INCOMING_CON_ERROR);
+            } else {
+                while(read_size = recv(client_sock , msg , MAX_LOGSIZE , 0), read_size > 0) {
+                    msg_it = msg;
+                    msg_it[read_size] = '\0';
+                    sf_debug1(MSG_RECEIVED, msg_it);
+                    // The msg must have the following format:
+                    // !code:number
+                    if (*msg_it != '!' || // Find the header
+                        !(found = strchr(msg_it, ':'))) { // Find the number divider
+                        sf_error(SOCKET_FORMAT_ERROR, msg);
+                        continue;
+                    }
+                    (*found++) = '\0';
+                    pr_id = msg_it + 1;
+                    number = strtol(found, NULL, 10);
+
+                    sf_debug2(SOCKET_SUCC_EXTRACT, pr_id, number);
+                    node = create_product_node(strdup(pr_id), number, db_mode);
+                    if (sf_queue_add(idq, node)) {
+                        sf_warn(FULL_QUEUE, node->code);
+                        free_product_node(node);
+                    }
+                }
+                if (read_size < 0) {
+                    sf_error(RECEIVE_ERROR);
+                }
+                close(client_sock);
+            }
+        }
+    } else if (!test_mode_file) {
         sf_info(INIT_BAR_HAND);
 #ifdef CAMERA_ENABLED
         // Setting the key handler
@@ -219,9 +273,8 @@ void sf_bar_handler(reader_conf *config) {
 
         zbar_processor_destroy(proc);
 #endif
-    } else { // (TBD)
+    } else {
         FILE *fp;
-        char *found;
         size_t read_size = 0;
         sf_info(INIT_BAR_HAND_TEST, test_mode_speed, test_mode_file);
 
@@ -278,7 +331,8 @@ void sf_rhelp() {
                     "\t-d\t\tDebug mode\n" \
                     "\t-f\t\tForeground mode\n" \
                     "\t-t\t\tTest mode\n" \
-                    "\t-p\t\tTest mode speed\n",
+                    "\t-p\t\tTest mode speed\n" \
+                    "\t-s\t\tSocket mode\n",
                     node_name);
 }
 
@@ -291,7 +345,7 @@ int main(int argc, char **argv) {
     static queue id_queue;
     static queue pr_queue;
 
-    while (option = getopt(argc, argv, "ddft:p:"), option != -1) {
+    while (option = getopt(argc, argv, "ddfst:p:"), option != -1) {
         switch (option) {
             case 'd':
                 sf_set_debug();
@@ -304,6 +358,9 @@ int main(int argc, char **argv) {
             break;
             case 'p':
                 test_mode_speed = strtol(optarg, NULL, 10);
+            break;
+            case 's':
+                socket_mode_port = -1;
             break;
             default:
                 sf_rhelp();
@@ -323,6 +380,10 @@ int main(int argc, char **argv) {
     }
 
     sf_set_log_file(config->log_location);
+
+    if (socket_mode_port) {
+        socket_mode_port = config->socket_mode_port;
+    }
 
 
     internal_header = config_db->internal_header;
