@@ -7,7 +7,8 @@
 #define CONTINUE_IT 32
 
 #define NODE_NAME "DATABASE_MANAGER"
-#define LOG_FILE "./sf.log"
+#define LOG_FILE INSTALL_FOLDER "/sf.log"
+#define DB_LOCATION INSTALL_FOLDER "/sf.db"
 extern const char *database_schema;
 
 int start_daemon();

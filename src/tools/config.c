@@ -351,7 +351,6 @@ void free_reader_conf(reader_conf *conf) {
     if (conf) {
         free(conf->test_repeat);
         free(conf->log_location);
-        free(conf->socket_mode_port);
         free(conf);
     }
 }

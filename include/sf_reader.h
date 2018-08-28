@@ -8,7 +8,7 @@
 #define MAX_PRODUCT_PRINT_SIZE 1024
 #define OF_API "https://world.openfoodfacts.org/api/v0/product/%s.json"
 #define NODE_NAME "reader"
-#define LOG_FILE "./sf.log"
+#define LOG_FILE INSTALL_FOLDER "/sf.log"
 #define DB_MODE_ADD 1
 #define DB_MODE_REMOVE 2
 #define REMOVE_MSG "{\"code\":\"%s\",\"remove\":\"yes\"}"

@@ -1,7 +1,7 @@
 #ifndef SF_CONFIG
 #define SF_CONFIG
 
-#define CONFIG_FILE "./config.yaml"
+#define CONFIG_FILE INSTALL_FOLDER "/config.yaml"
 
 typedef enum n_config {
     N_READER,
