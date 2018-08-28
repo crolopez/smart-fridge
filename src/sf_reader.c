@@ -285,7 +285,7 @@ void sf_rhelp() {
 int main(int argc, char **argv) {
     pthread_t de_t, st_t;
     reader_conf *config;
-    connections_conf *config_con;
+    db_conf *config_db;
     int option;
     int result;
     static queue id_queue;
@@ -318,14 +318,17 @@ int main(int argc, char **argv) {
         sf_exit_error(LOAD_CONFIG_ERROR);
     }
 
-    if (sf_read_config(N_CONNECTIONS, (void **)&config_con)) {
+    if (sf_read_config(N_DB, (void **)&config_db)) {
         sf_exit_error(LOAD_CONFIG_ERROR);
     }
 
-    internal_header = config_con->internal_header;
+    sf_set_log_file(config->log_location);
+
+
+    internal_header = config_db->internal_header;
     int_header_size = strlen(internal_header);
-    int_address = config_con->internal_address;
-    int_port = config_con->internal_port;
+    int_address = config_db->internal_address;
+    int_port = config_db->internal_port;
 
     if (result = sf_queue_set(&id_queue, config->id_size), result == 1) {
         sf_exit_error(SMALL_QUEUE_SIZE, "ID", config->id_size);
@@ -354,6 +357,6 @@ int main(int argc, char **argv) {
     pthread_join(st_t, NULL);
 
     free_reader_conf(config);
-    free_connection_conf(config_con);
+    free_db_conf(config_db);
     return 0;
 }

@@ -3,7 +3,7 @@
 #include "config.h"
 
 static int sf_load_reader_config(reader_conf **config, yaml_parser_t *parser);
-static int sf_load_connections_config(connections_conf **config, yaml_parser_t *parser);
+static int sf_load_db_config(db_conf **config, yaml_parser_t *parser);
 
 // Control structures
 /* scalar_converter.type
@@ -24,14 +24,16 @@ typedef enum reader_section {
     id_sect,
     pr_sect,
     test_sect,
-    coder_sect
+    coder_sect,
+    rlogs_sect
 } reader_section;
 
-typedef enum connections_section {
+typedef enum database_section {
     ports,
     headers,
-    addresses
-} connections_section;
+    addresses,
+    dlogs_sect
+} database_section;
 
 typedef enum yaml_state {
     expect_key,
@@ -42,7 +44,7 @@ typedef enum yaml_state {
 
 // Blocks
 static const char * YAML_READER = "reader";
-static const char * YAML_CONNECTIONS = "connections";
+static const char * YAML_DATABASE = "database";
 // Reader block
 static const char * YAML_ID_QUEUE = "id_queue";
 static const char * YAML_PROD_QUEUE = "product_queue";
@@ -52,11 +54,14 @@ static const char * YAML_SLEEP = "sleep";
 static const char * YAML_SIZE = "size";
 static const char * YAML_INFINITE = "infinite";
 static const char * YAML_DEVICE = "device";
-// Connections Blocks
+// Database Blocks
 static const char * YAML_PORTS = "ports";
 static const char * YAML_ADDRESSES = "addresses";
 static const char * YAML_HEADERS = "headers";
 static const char * YAML_INTERNAL = "internal";
+// Generic blocks
+static const char * YAML_LOGS = "logs";
+static const char * YAML_LOCATION = "location";
 
 int sf_read_config(n_config type, void **config) {
     FILE *fp = NULL;
@@ -84,23 +89,6 @@ int sf_read_config(n_config type, void **config) {
             case YAML_KEY_TOKEN:
                 state = expect_key;
                 break;
-            /*
-            case YAML_STREAM_START_TOKEN:
-                state = expect_block_mapping;
-                break;
-
-            case YAML_VALUE_TOKEN:
-                if (state != expect_block_mapping) {
-                    state = expect_value;
-                }
-                break;
-            case YAML_BLOCK_MAPPING_START_TOKEN:
-                if (state != expect_block_mapping) {
-                    sf_error(INV_CONFIG_IN_BLOCK, YAML_READER);
-                    goto clean;
-                }
-                break;
-            */
             case YAML_SCALAR_TOKEN:
                 scalar = token.data.scalar.value;
                 if (state == expect_key) {
@@ -112,10 +100,10 @@ int sf_read_config(n_config type, void **config) {
                             }
                             out = 1;
                         }
-                    } else if (!strcmp(scalar, YAML_CONNECTIONS)) {
+                    } else if (!strcmp(scalar, YAML_DATABASE)) {
                         yaml_token_delete(&token);
-                        if (type == N_CONNECTIONS) {
-                            if (sf_load_connections_config((connections_conf **)config, parser)) {
+                        if (type == N_DB) {
+                            if (sf_load_db_config((db_conf **)config, parser)) {
                                 goto clean;
                             }
                             out = 1;
@@ -199,6 +187,9 @@ int sf_load_reader_config(reader_conf **config, yaml_parser_t *parser) {
                     } else if (!strcmp(scalar, YAML_DEVICE)) {
                         conv.data = (void **)&(*config)->device;
                         conv.type = 0;
+                    } else if (!strcmp(scalar, YAML_LOCATION)) {
+                        conv.data = (void **)&(*config)->log_location;
+                        conv.type = 0;
                     } else if (!strcmp(scalar, YAML_ID_QUEUE)) {
                         sect = id_sect;
                         state = expect_block_mapping;
@@ -210,6 +201,9 @@ int sf_load_reader_config(reader_conf **config, yaml_parser_t *parser) {
                         state = expect_block_mapping;
                     } else if (!strcmp(scalar, YAML_CODE_READER)) {
                         sect = coder_sect;
+                        state = expect_block_mapping;
+                    } else if (!strcmp(scalar, YAML_LOGS)) {
+                        sect = rlogs_sect;
                         state = expect_block_mapping;
                     } else {
                         sf_error(INV_CONFIG_TAG_BLOCK, scalar, YAML_READER);
@@ -250,16 +244,16 @@ clean:
 }
 
 
-int sf_load_connections_config(connections_conf **config, yaml_parser_t *parser) {
+int sf_load_db_config(db_conf **config, yaml_parser_t *parser) {
     yaml_token_t  token;
     char *scalar;
     scalar_converter conv;
-    connections_section sect;
+    database_section sect;
     yaml_state state;
     int retval = 1;
     char out = 0;
 
-    *config = calloc(1, sizeof(connections_conf));
+    *config = calloc(1, sizeof(db_conf));
     memset(&conv, 0, sizeof(scalar_converter));
 
     state = expect_block_mapping;
@@ -276,7 +270,7 @@ int sf_load_connections_config(connections_conf **config, yaml_parser_t *parser)
                 break;
             case YAML_BLOCK_MAPPING_START_TOKEN:
                 if (state != expect_block_mapping) {
-                    sf_error(INV_CONFIG_IN_BLOCK, YAML_CONNECTIONS);
+                    sf_error(INV_CONFIG_IN_BLOCK, YAML_DATABASE);
                     goto clean;
                 }
                 break;
@@ -295,6 +289,9 @@ int sf_load_connections_config(connections_conf **config, yaml_parser_t *parser)
                             conv.type = 2;
                         }
                         sect = -1;
+                    } else if (!strcmp(scalar, YAML_LOCATION)) {
+                        conv.data = (void **)&(*config)->log_location;
+                        conv.type = 2;
                     } else if (!strcmp(scalar, YAML_PORTS)) {
                         sect = ports;
                         state = expect_block_mapping;
@@ -304,8 +301,11 @@ int sf_load_connections_config(connections_conf **config, yaml_parser_t *parser)
                     } else if (!strcmp(scalar, YAML_ADDRESSES)) {
                         sect = addresses;
                         state = expect_block_mapping;
+                    } else if (!strcmp(scalar, YAML_LOGS)) {
+                        sect = dlogs_sect;
+                        state = expect_block_mapping;
                     } else {
-                        sf_error(INV_CONFIG_TAG_BLOCK, scalar, YAML_CONNECTIONS);
+                        sf_error(INV_CONFIG_TAG_BLOCK, scalar, YAML_DATABASE);
                         goto clean;
                     }
                 } else {
@@ -341,14 +341,16 @@ clean:
 void free_reader_conf(reader_conf *conf) {
     if (conf) {
         free(conf->test_repeat);
+        free(conf->log_location);
         free(conf);
     }
 }
 
-void free_connection_conf(connections_conf *conf) {
+void free_db_conf(db_conf *conf) {
     if (conf) {
         free(conf->internal_header);
         free(conf->internal_address);
+        free(conf->log_location);
         free(conf);
     }
 }

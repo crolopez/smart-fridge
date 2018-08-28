@@ -8,19 +8,23 @@
 reader:
     id_queue:
         sleep : 1
-        size : 5
+        size : 100
     product_queue:
-        sleep : 3
-        size : 6
+        sleep : 1
+        size : 100
     test_mode:
         sleep : 2
-        infinite : no
+        infinite : yes
     code_reader:
         device : "/dev/video0"
-connections:
+    logs:
+        location : "./sf.log"
+database:
     ports:
         internal : 2187
     headers:
         internal : "!#+"
     addresses:
         internal : "127.0.0.1"
+    logs:
+        location : "./sf.log"

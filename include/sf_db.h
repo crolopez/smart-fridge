@@ -6,8 +6,8 @@
 #define MAX_MSG_CHUNK 6144
 #define CONTINUE_IT 32
 
-const char *node_name = "database server";
-const char *log_file = "./sf.log";
+#define NODE_NAME "DATABASE_MANAGER"
+#define LOG_FILE "./sf.log"
 extern const char *database_schema;
 
 int start_daemon();

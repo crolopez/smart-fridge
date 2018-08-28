@@ -23,7 +23,7 @@ void sf_dhelp() {
                     node_name);
 }
 
-int start_daemon(connections_conf *config) {
+int start_daemon(db_conf *config) {
     int client_sock;
     int internal_sock_desc;
     struct sockaddr_in server, client;
@@ -384,7 +384,7 @@ int create_db() {
 }
 
 int main(int argc, char **argv) {
-    connections_conf *config;
+    db_conf *config;
     int option;
 
     while (option = getopt(argc, argv, "ddf"), option != -1) {
@@ -401,9 +401,14 @@ int main(int argc, char **argv) {
         }
     }
 
-    if (sf_read_config(N_CONNECTIONS, (void **)&config)) {
+    sf_set_node_name(NODE_NAME);
+    sf_set_log_file(LOG_FILE);
+
+    if (sf_read_config(N_DB, (void **)&config)) {
         sf_exit_error(LOAD_CONFIG_ERROR);
     }
+
+    sf_set_log_file(config->log_location);
 
     internal_header = config->internal_header;
     int_header_size = strlen(internal_header);
