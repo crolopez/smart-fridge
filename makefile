@@ -90,7 +90,7 @@ CURL_LDFLAGS=-lcurl -lz $(LDAP_LIBS) -lssl -lcrypto $(ZBAR_LIB)
 PROJECT_PATH := $(shell pwd)
 OPENSSL_PATH=$(PROJECT_PATH)/$(EXT)/openssl
 SCHEMA_LOCATION=./database.sql
-EXT_VAR+= -DSCHEMA_LOCATION=\"$(SCHEMA_LOCATION)\" 
+EXT_VAR+= -DSCHEMA_LOCATION=\"$(SCHEMA_LOCATION)\"
 
 BINARIES=$(BIN)/$(SDB) $(BIN)/$(SREADER) #$(EXT_L)
 
@@ -128,7 +128,10 @@ install: $(DEFAULT_DEPS)
 	@mkdir -p $(INSTALL_FOLDER)/logs
 	@cp $(BIN)/$(SDB) $(INSTALL_FOLDER)/bin
 	@cp $(BIN)/$(SREADER) $(INSTALL_FOLDER)/bin
-	@cp config.yaml $(INSTALL_FOLDER)
+	@cp etc/config.yaml $(INSTALL_FOLDER)
+	@cp etc/sf-control.sh $(INSTALL_FOLDER)/bin/sf-control
+	@cp etc/smart-fridge.service /etc/systemd/system
+	@echo DIRECTORY=$(INSTALL_FOLDER) > /etc/smart-fridge.init
 	@echo $(SET_PATH) >> ~/.profile
 
 $(EXT): $(EXT_D) $(LCURL) $(LYAML) $(LSQLITE) $(ZBAR)
