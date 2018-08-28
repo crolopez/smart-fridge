@@ -13,7 +13,7 @@
 #
 ####################################
 
-PROJECT_NAME=SmartFridge
+PROJECT_NAME=smart-fridge
 INSTALL_PATH?=/opt
 
 # Print colours

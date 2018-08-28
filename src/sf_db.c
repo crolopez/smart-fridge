@@ -15,6 +15,7 @@
 
 static const char *internal_header;
 static int int_header_size;
+static int foreground_mode = 0;
 
 void sf_dhelp() {
     fprintf(stdout, "\n%s: -[ddf]\n" \
@@ -394,11 +395,16 @@ int main(int argc, char **argv) {
             break;
             case 'f':
                 sf_set_foreground();
+                foreground_mode = 1;
             break;
             default:
                 sf_dhelp();
                 return 1;
         }
+    }
+
+    if (!foreground_mode && fork()) {
+        return 0;
     }
 
     sf_set_node_name(NODE_NAME);

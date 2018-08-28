@@ -20,7 +20,7 @@ reader:
     code_reader:
         device : "/dev/video0"
     logs:
-        location : "/opt/smartfridge/logs/reader.log"
+        location : "/opt/smart-fridge/logs/reader.log"
 database:
     ports:
         internal : 2187
@@ -29,4 +29,4 @@ database:
     addresses:
         internal : "127.0.0.1"
     logs:
-        location : "/opt/smartfridge/logs/database.log"
+        location : "/opt/smart-fridge/logs/database.log"

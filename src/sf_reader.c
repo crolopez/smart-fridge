@@ -30,6 +30,7 @@ static int int_port;
 static int socket_mode_port = 0;
 static int execution_ends = 0;
 static char db_mode = DB_MODE_ADD;
+static char foreground_mode = 0;
 
 product_node *sf_scan_code() {
     // Check MAX_ID_LEN here
@@ -352,6 +353,7 @@ int main(int argc, char **argv) {
             break;
             case 'f':
                 sf_set_foreground();
+                foreground_mode = 1;
             break;
             case 't':
                 test_mode_file = strdup(optarg);
@@ -366,6 +368,10 @@ int main(int argc, char **argv) {
                 sf_rhelp();
                 return 1;
         }
+    }
+
+    if (!foreground_mode && fork()) {
+        return 0;
     }
 
     sf_set_node_name(NODE_NAME);
