@@ -133,6 +133,7 @@ install: $(DEFAULT_DEPS)
 	@cp etc/smart-fridge.service /etc/systemd/system
 	@echo DIRECTORY=$(INSTALL_FOLDER) > /etc/smart-fridge.init
 	@echo $(SET_PATH) >> ~/.profile
+	@$(P_SUCCESS) "Smart Fridge has been successfully installed."
 
 $(EXT): $(EXT_D) $(LCURL) $(LYAML) $(LSQLITE) $(ZBAR)
 	$(P_END)
